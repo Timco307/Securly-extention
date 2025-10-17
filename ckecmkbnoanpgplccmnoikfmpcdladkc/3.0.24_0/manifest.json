@@ -1,0 +1,84 @@
+{
+   "background": {
+      "service_worker": "securly.min.js"
+   },
+   "content_scripts": [ {
+      "all_frames": true,
+      "js": [ "content.min.js" ],
+      "matches": [ "*://*.youtube.com/*", "*://youtube.com/*", "*://youtube-nocookie.com/*", "*://*.youtube-nocookie.com/*" ],
+      "run_at": "document_start"
+   }, {
+      "all_frames": true,
+      "js": [ "content2.min.js" ],
+      "matches": [ "*://*.google.com/maps/*", "*://google.com/maps/*" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": true,
+      "js": [ "content3.min.js" ],
+      "matches": [ "*://bing.com/search*", "*://www.bing.com/search*", "*://search.yahoo.com/search*", "*://www.search.yahoo.com/search*", "*://youtube.com/*", "*://www.youtube.com/*", "*://google.com/search*", "*://www.google.com/search*", "*://google.co.uk/search*", "*://www.google.co.uk/search*", "*://google.ie/search*", "*://www.google.ie/search*", "*://google.ca/search*", "*://www.google.ca/search*", "*://google.com.au/search*", "*://www.google.com.au/search*", "*://google.co.in/search*", "*://www.google.co.in/search*" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": true,
+      "js": [ "content6.min.js" ],
+      "matches": [ "*://meet.google.com/*" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": false,
+      "js": [ "content4.min.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": true,
+      "js": [ "content5.min.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": true,
+      "js": [ "content10.min.js" ],
+      "matches": [ "*://chat.google.com/*" ],
+      "run_at": "document_start"
+   }, {
+      "all_frames": true,
+      "include_globs": [ "https://www.google.*/*" ],
+      "js": [ "content9.min.js" ],
+      "matches": [ "https://*/*" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": false,
+      "js": [ "content7.min.js" ],
+      "matches": [ "*://*.securly.com/crextn/geoloc.html" ],
+      "run_at": "document_idle"
+   }, {
+      "all_frames": true,
+      "js": [ "content8.min.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_start"
+   }, {
+      "all_frames": true,
+      "js": [ "content11.min.js" ],
+      "matches": [ "\u003Call_urls>" ],
+      "run_at": "document_start"
+   } ],
+   "description": "Secure and manage your 1:1 Chromebooks with Securly",
+   "host_permissions": [ "*://*/", "file://*" ],
+   "icons": {
+      "128": "icon128.png",
+      "16": "icon16.png",
+      "48": "icon48.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo3mMpyJzOwWY+04jYpCbECs3sk/TtVJq1ca8xDm/Tze09OxpdjcC1PdqlIupIP4v3NXUBPaGjCCwujfAtN02z6NrwLx/ao0RsL5iMG5LS42o1B5DXKoffoTykMwhsXjYbrIgq4rsNq3rOqp7Gsu5acYTkb2zD+5KOF1QRQiwhv8matTVzr1S3UyMZNthiXbFw+rk41kcArBiaSsbW662l+jxsYrowLedWM0o0Mcb0FztW+BehTfzgCJhHBHEPydYhxiwyknNsU+ATbD/nI2765ov50uqh2N4cnloHcj4rbPiQrLKsWjBZfZksxeKJ6UVy4B6kpqRuX3ilLH/u8jwewIDAQAB",
+   "manifest_version": 3,
+   "name": "Securly for Chromebooks",
+   "oauth2": {
+      "client_id": "979354546084.apps.googleusercontent.com",
+      "scopes": [ "email" ]
+   },
+   "permissions": [ "webRequest", "webRequestBlocking", "identity", "cookies", "tabs", "browsingData", "identity.email", "geolocation", "idle", "downloads", "storage", "scripting", "declarativeNetRequest", "declarativeNetRequestWithHostAccess", "declarativeNetRequestFeedback", "system.display", "alarms", "webNavigation", "offscreen" ],
+   "short_name": "Securly",
+   "update_url": "https://crextnaut.securly.com/subscribers/defaultfrommanifest@securly.com/update-manifest.xml",
+   "version": "3.0.24",
+   "web_accessible_resources": [ {
+      "matches": [ "\u003Call_urls>" ],
+      "resources": [ "fonts/*", "*.svg" ]
+   } ]
+}

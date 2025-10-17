@@ -1,0 +1,1 @@
+function setInfo(){try{var t=new URL(window.location).searchParams.get("site"),e=new URL(window.location).searchParams.get("category"),n=document.getElementById("category"),o=document.getElementById("site");n.textContent=atob(e),o.textContent=atob(t)}catch(t){}}document.addEventListener("DOMContentLoaded",function(t){setInfo()});
