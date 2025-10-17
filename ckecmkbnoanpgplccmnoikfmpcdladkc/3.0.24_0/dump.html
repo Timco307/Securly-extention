@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Securly Policy Dumper</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f9fafb;
+    color: #111;
+    text-align: center;
+    padding: 40px;
+  }
+  h1 { font-size: 1.5em; margin-bottom: 0.5em; }
+  button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 0.5em;
+    padding: 0.75em 1.5em;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  pre {
+    text-align: left;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 1em;
+    border-radius: 0.5em;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+  <h1>Securly Policy Dumper</h1>
+  <p>Click below to export the cached Securly policy data from this extension’s storage.</p>
+  <button id="dump">Dump Policy JSON</button>
+  <pre id="log"></pre>
+
+  <script>
+  document.getElementById('dump').addEventListener('click', async () => {
+    const log = document.getElementById('log');
+    log.textContent = 'Collecting policy data...';
+
+    try {
+      const all = await chrome.storage.local.get(null);
+      const keys = Object.keys(all).filter(k =>
+        /policy|filter|config|user/i.test(k)
+      );
+      const dump = {};
+      for (const k of keys) dump[k] = all[k];
+
+      const blob = new Blob(
+        [JSON.stringify(dump, null, 2)],
+        { type: "application/json" }
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "policy.json";
+      a.click();
+      URL.revokeObjectURL(url);
+
+      log.textContent =
+        "✅ Dump complete — saved as policy.json\n\nFound keys:\n" + keys.join("\n");
+    } catch (err) {
+      log.textContent = "❌ Error: " + err.message;
+      console.error(err);
+    }
+  });
+  </script>
+</body>
+</html>
