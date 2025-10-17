@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Securly Policy Lookup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Simple JSON highlighter */
+    pre.code { white-space: pre-wrap; word-wrap: break-word; }
+    .k { color: #1f6feb; font-weight: 600; } /* key */
+    .s { color: #0ea5e9; } /* string */
+    .n { color: #10b981; } /* number */
+    .b { color: #f59e0b; } /* boolean */
+    .l { color: #94a3b8; } /* null */
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div class="max-w-5xl mx-auto p-6">
+    <header class="mb-6 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-slate-900 text-white grid place-items-center font-bold">SP</div>
+      <div>
+        <h1 class="text-2xl font-semibold leading-tight">Securly Policy Lookup</h1>
+        <p class="text-sm text-slate-500">Enter a user email to fetch and inspect their effective web filtering policy. <span class="font-medium">Requires an authorized API</span> or use mock/offline mode.</p>
+      </div>
+    </header>
+
+    <!-- Config Card -->
+    <section class="mb-6 bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-4 md:p-5 flex flex-col gap-4">
+        <h2 class="text-lg font-semibold">Configuration</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm text-slate-600">API Base URL (admin-only)</span>
+            <input id="apiBase" type="url" placeholder="https://YOUR-SECURLY-API.example" class="mt-1 w-full rounded-xl border-slate-300 focus:border-slate-500 focus:ring-slate-500" />
+          </label>
+          <label class="block">
+            <span class="text-sm text-slate-600">API Key / Bearer Token</span>
+            <input id="apiKey" type="password" placeholder="Optional — if your endpoint requires auth" class="mt-1 w-full rounded-xl border-slate-300 focus:border-slate-500 focus:ring-slate-500" />
+          </label>
+          <label class="inline-flex items-center gap-3">
+            <input id="apiMode" type="checkbox" class="rounded-md" />
+            <span class="text-sm">Use API mode (uncheck for mock/offline)</span>
+          </label>
+          <label class="block">
+            <span class="text-sm text-slate-600">Offline policy JSON (optional)</span>
+            <input id="fileInput" type="file" accept="application/json" class="mt-1 block w-full text-sm" />
+            <span class="text-xs text-slate-500">Upload a JSON export of policies to query locally.</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Query Card -->
+    <section class="mb-6 bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div class="p-4 md:p-5">
+        <form id="lookupForm" class="grid gap-4 md:grid-cols-[1fr_auto] items-end">
+          <label class="block">
+            <span class="text-sm text-slate-600">User Email</span>
+            <input id="email" type="email" required placeholder="student@school.org" class="mt-1 w-full rounded-xl border-slate-300 focus:border-slate-500 focus:ring-slate-500" />
+          </label>
+          <button id="submitBtn" class="h-11 px-5 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 active:scale-[.99]">Lookup Policy</button>
+        </form>
+        <p class="mt-3 text-xs text-slate-500">Note: Real policy retrieval requires an admin-authorized endpoint. This page will call your configured API if <span class="font-medium">API mode</span> is enabled, else it searches the uploaded JSON or built-in mock data.</p>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="hidden flex-col gap-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Effective Policy</h3>
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <span id="sourceTag" class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100">—</span>
+              <button id="downloadBtn" class="px-2 py-1 rounded-lg border text-slate-700 hover:bg-slate-50">Download JSON</button>
+            </div>
+          </div>
+          <div id="policySummary" class="mt-4 grid gap-4 md:grid-cols-2"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="p-4 md:p-5">
+          <h4 class="text-base font-semibold">Raw Policy JSON</h4>
+          <pre id="rawJson" class="code mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm overflow-x-auto"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden">
+      <div class="px-4 py-2 rounded-xl shadow-lg bg-slate-900 text-white text-sm">Copied to clipboard</div>
+    </div>
+  </div>
+
+  <script>
+    // --- Minimal JSON pretty highlighter ---
+    function prettyJson(obj) {
+      const json = JSON.stringify(obj, null, 2);
+      return json
+        .replace(/(&|<|>)/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))
+        .replace(/\n/g, '\n')
+        .replace(/"(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(?=\s*:)/g, m => `<span class="k">${m}</span>`) // keys
+        .replace(/\b(true|false)\b/g, '<span class="b">$1</span>')
+        .replace(/\b(null)\b/g, '<span class="l">$1</span>')
+        .replace(/"([^"\\]|\\.)*"/g, '<span class="s">$&</span>')
+        .replace(/\b(-?\d+(?:\.\d+)?)\b/g, '<span class="n">$1</span>');
+    }
+
+    // --- Mock data (edit/remove in production) ---
+    const MOCK = {
+      policies: [
+        {
+          email: 'student@school.org',
+          userId: 'u-1001',
+          groups: ['Grade 8', 'Default Students'],
+          safeSearch: { google: true, bing: true, youtubeRestricted: 'moderate' },
+          imageFilters: { googleCCOnly: true },
+          blockLists: { categories: ['Adult', 'Gambling'], domains: ['example-bad.com'] },
+          allowLists: { domains: ['district-portal.example'] },
+          exceptions: { timeWindows: [], overrides: [] },
+          logging: { enabled: true, retentionDays: 30 },
+          lastEvaluated: new Date().toISOString(),
+        }
+      ]
+    };
+
+    // --- State ---
+    let uploadedPolicies = null; // JSON object from file
+
+    // --- Elements ---
+    const form = document.getElementById('lookupForm');
+    const emailEl = document.getElementById('email');
+    const apiBaseEl = document.getElementById('apiBase');
+    const apiKeyEl = document.getElementById('apiKey');
+    const apiModeEl = document.getElementById('apiMode');
+    const fileInputEl = document.getElementById('fileInput');
+    const results = document.getElementById('results');
+    const policySummary = document.getElementById('policySummary');
+    const rawJson = document.getElementById('rawJson');
+    const sourceTag = document.getElementById('sourceTag');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    fileInputEl.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        uploadedPolicies = json;
+        flash('Policy JSON loaded.');
+      } catch (err) {
+        alert('Could not parse JSON file.');
+        uploadedPolicies = null;
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailEl.value.trim().toLowerCase();
+      if (!email) return;
+
+      setBusy(true);
+      try {
+        let source = 'mock';
+        let policy = null;
+
+        if (apiModeEl.checked) {
+          source = 'api';
+          const base = (apiBaseEl.value || '').trim();
+          if (!base) throw new Error('API base URL is required in API mode.');
+          policy = await fetchPolicyFromAPI(base, apiKeyEl.value, email);
+        } else {
+          // Offline search: uploaded JSON first, then mock
+          const data = uploadedPolicies || MOCK;
+          policy = findPolicyLocally(data, email);
+          if (!policy) throw new Error('No policy found for this email in uploaded or mock data.');
+        }
+
+        renderPolicy(policy, source);
+      } catch (err) {
+        renderError(err.message);
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([rawJson.textContent], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'policy.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // --- Helpers ---
+    function setBusy(busy) {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = busy;
+      btn.textContent = busy ? 'Looking up…' : 'Lookup Policy';
+    }
+
+    function flash(msg) {
+      const t = document.getElementById('toast');
+      t.querySelector('div').textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 1400);
+    }
+
+    async function fetchPolicyFromAPI(base, apiKey, email) {
+      // NOTE: This is a placeholder. Replace with your actual, authorized endpoint.
+      // Example: `${base.replace(/\/$/, '')}/v1/policies?email=${encodeURIComponent(email)}`
+      const url = `${base.replace(/\/$/, '')}/policies?email=${encodeURIComponent(email)}`;
+      const headers = { 'Accept': 'application/json' };
+      if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`API error ${res.status}: ${text || res.statusText}`);
+      }
+      const data = await res.json();
+      // Accept either a single policy object or {policies:[...]}
+      if (Array.isArray(data?.policies)) {
+        const match = data.policies.find(p => (p.email||'').toLowerCase() === email);
+        if (!match) throw new Error('No policy found for this email in API response.');
+        return match;
+      }
+      return data;
+    }
+
+    function findPolicyLocally(dataset, email) {
+      if (!dataset) return null;
+      if (Array.isArray(dataset.policies)) {
+        return dataset.policies.find(p => (p.email||'').toLowerCase() === email) || null;
+      }
+      if ((dataset.email||'').toLowerCase() === email) return dataset;
+      return null;
+    }
+
+    function renderPolicy(policy, source) {
+      results.classList.remove('hidden');
+      sourceTag.textContent = source === 'api' ? 'API' : (uploadedPolicies ? 'Uploaded JSON' : 'Mock');
+
+      // Summary cards
+      policySummary.innerHTML = '';
+      const cards = [
+        ['Identity', {
+          'Email': policy.email || '—',
+          'User ID': policy.userId || '—',
+          'Groups': Array.isArray(policy.groups) ? policy.groups.join(', ') : '—',
+          'Last Evaluated': policy.lastEvaluated || '—'
+        }],
+        ['Safety / Search', {
+          'Google SafeSearch': bool(policy?.safeSearch?.google),
+          'Bing SafeSearch': bool(policy?.safeSearch?.bing),
+          'YouTube Restriction': (policy?.safeSearch?.youtubeRestricted ?? '—')
+        }],
+        ['Images', {
+          'Google Images (CC only)': bool(policy?.imageFilters?.googleCCOnly)
+        }],
+        ['Blocking', {
+          'Categories': list(policy?.blockLists?.categories),
+          'Domains (blocked)': list(policy?.blockLists?.domains)
+        }],
+        ['Allow Rules', {
+          'Domains (allowed)': list(policy?.allowLists?.domains)
+        }],
+        ['Exceptions', {
+          'Time Windows': list(policy?.exceptions?.timeWindows),
+          'Overrides': list(policy?.exceptions?.overrides)
+        }],
+        ['Logging', {
+          'Enabled': bool(policy?.logging?.enabled),
+          'Retention (days)': policy?.logging?.retentionDays ?? '—'
+        }]
+      ];
+
+      for (const [title, data] of cards) {
+        policySummary.appendChild(makeCard(title, data));
+      }
+
+      rawJson.innerHTML = prettyJson(policy);
+    }
+
+    function renderError(message) {
+      results.classList.remove('hidden');
+      policySummary.innerHTML = '';
+      sourceTag.textContent = '—';
+      rawJson.textContent = '';
+      policySummary.appendChild(makeCard('Error', { 'Message': message }));
+    }
+
+    function makeCard(title, entries) {
+      const card = document.createElement('div');
+      card.className = 'rounded-xl border border-slate-200 p-4';
+      const h = document.createElement('h5');
+      h.className = 'font-semibold mb-2'; h.textContent = title;
+      const dl = document.createElement('dl');
+      dl.className = 'text-sm grid grid-cols-1 gap-1';
+      for (const [k, v] of Object.entries(entries)) {
+        const dt = document.createElement('dt'); dt.className = 'text-slate-500'; dt.textContent = k;
+        const dd = document.createElement('dd'); dd.className = 'mb-2'; dd.textContent = v;
+        dl.append(dt, dd);
+      }
+      card.append(h, dl);
+      return card;
+    }
+
+    function bool(v) { return v === true ? 'On' : v === false ? 'Off' : '—'; }
+    function list(arr) {
+      if (!arr) return '—';
+      if (Array.isArray(arr)) return arr.length ? arr.join(', ') : '—';
+      return String(arr);
+    }
+  </script>
+</body>
+</html>
