@@ -1,0 +1,30 @@
+{
+   "action": {
+      "default_icon": {
+         "128": "assets/images/icon.png"
+      },
+      "default_popup": "popup.html"
+   },
+   "author": "VERSIONPROD",
+   "background": {
+      "service_worker": "background.js"
+   },
+   "content_scripts": [  ],
+   "default_locale": "en",
+   "description": "LockDown Browser is a custom browser that locks down the exam environment within specific learning and assessment systems",
+   "host_permissions": [ "http://*/*", "https://*/*", "\u003Call_urls>" ],
+   "icons": {
+      "128": "assets/images/icon.png"
+   },
+   "incognito": "not_allowed",
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlnNWaKcqHU+M0ycw4AAULtv6zSNWMuNEnRvudxlrqc7aPl2fYh4c4EQbCJjoMizKtGIWxR/28Ch+hYSv/b/6HEoRl9Yddoxo9eTdMwlRGTvRd76mfOlU9YZ+6xkylS4Wvcverd5HGaYOBp597IS+C/bRohD+1reZlH5fQDmQlFeGFlEQgtkwm07l9SV6jlwzckM2TKtk0I5xd3rVsG4vu8rS9mOWSYCvNc5L97l07i/IRADQuDpXA1ayJqzHDiKcZMHTtXGCiXM84JHI9P3DvbZyhggxUVBRmULc94069doDKorw+NfDoJ2oAlVoz6YXYPtgfZFjHrml+9waalo3/QIDAQAB",
+   "manifest_version": 3,
+   "name": "LockDown Browser",
+   "permissions": [ "system.display", "history", "cookies", "storage", "webNavigation", "webRequest", "tabs", "activeTab", "scripting", "management", "contentSettings", "browsingData", "declarativeNetRequestWithHostAccess", "clipboardRead", "clipboardWrite", "wallpaper" ],
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "0.4.43",
+   "web_accessible_resources": [ {
+      "matches": [ "\u003Call_urls>" ],
+      "resources": [ "background.js", "manifest.json", "viewer.html", "viewer.js", "toolbar.js", "security.js", "security.html", "calculator.js", "calculator.html", "endExam.js", "end_exam.html", "focus_lost.html", "monitor.html", "monitor.js", "loadingbar.html", "loadingbar.js", "early_exit.html", "earlyExit.js", "essayBlock.js", "_locales/de/messages.json", "_locales/en/messages.json", "_locales/es/messages.json", "_locales/fr/messages.json", "_locales/it/messages.json", "_locales/pt/messages.json", "/assets/images/close-tab.png", "/assets/images/calculator-light.png", "/assets/images/x-square.png", "/assets/images/recording-icon.png" ]
+   } ]
+}
